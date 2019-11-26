@@ -11,7 +11,15 @@
 #import <React/RCTEventDispatcher.h>
 #import <React/RCTBridge.h>
 #import <React/RCTLog.h>
+
+#if __has_include(<React/RCTImageLoader.h>)
 #import <React/RCTImageLoader.h>
+#else
+#import <React/RCTImageURLLoader.h>
+#import <React/RCTImageShadowView.h>
+#import <React/RCTImageView.h>
+#import <React/RCTImageLoaderProtocol.h>
+#endif
 
 // Define error messages
 #define NOT_REGISTERED (@"registerApp required.")
@@ -248,7 +256,7 @@ RCT_EXPORT_METHOD(pay:(NSDictionary *)data
                    [type isEqualToString:RCTWXShareTypeImageResource]) {
             NSURL *url = [NSURL URLWithString:aData[RCTWXShareImageUrl]];
             NSURLRequest *imageRequest = [NSURLRequest requestWithURL:url];
-            [self.bridge.imageLoader loadImageWithURLRequest:imageRequest callback:^(NSError *error, UIImage *image) {
+            [[self.bridge moduleForName:@"ImageLoader"] loadImageWithURLRequest:imageRequest callback:^(NSError *error, UIImage *image) {
                 if (image == nil){
                     callback(@[@"fail to load image resource"]);
                 } else {
@@ -295,10 +303,10 @@ RCT_EXPORT_METHOD(pay:(NSDictionary *)data
 - (void)shareToWeixinWithData:(NSDictionary *)aData scene:(int)aScene callback:(RCTResponseSenderBlock)aCallBack
 {
     NSString *imageUrl = aData[RCTWXShareTypeThumbImageUrl];
-    if (imageUrl.length && _bridge.imageLoader) {
+    if (imageUrl.length) {
         NSURL *url = [NSURL URLWithString:imageUrl];
         NSURLRequest *imageRequest = [NSURLRequest requestWithURL:url];
-        [_bridge.imageLoader loadImageWithURLRequest:imageRequest size:CGSizeMake(100, 100) scale:1 clipped:FALSE resizeMode:RCTResizeModeStretch progressBlock:nil partialLoadBlock:nil
+        [[_bridge moduleForName:@"ImageLoader"] loadImageWithURLRequest:imageRequest size:CGSizeMake(100, 100) scale:1 clipped:FALSE resizeMode:RCTResizeModeStretch progressBlock:nil partialLoadBlock:nil
             completionBlock:^(NSError *error, UIImage *image) {
             [self shareToWeixinWithData:aData thumbImage:image scene:aScene callBack:aCallBack];
         }];
